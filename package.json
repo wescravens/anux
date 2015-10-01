@@ -1,0 +1,32 @@
+{
+  "name": "anux",
+  "version": "0.0.1",
+  "description": "An Angular + Flux dynamic store managing service",
+  "main": "anux.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wescravens/anux.git"
+  },
+  "keywords": [
+    "Flux",
+    "Angular",
+    "anux",
+    "react",
+    "flow",
+    "reflux",
+    "buzzwords"
+  ],
+  "author": "Wes Cravens <wesley.r.cravens@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wescravens/anux/issues"
+  },
+  "homepage": "https://github.com/wescravens/anux",
+  "dependencies": {
+    "flux-angular": "^2.5.0",
+    "lodash": "^3.10.1"
+  }
+}

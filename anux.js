@@ -8,12 +8,12 @@
  *     .then(anux.dispatch('MyResource'))
  *     .catch(anux.error('MyResource'));
  * };
- * 
+ *
  * Example consumer: myResourceDisplay.controller.js
- * 
+ *
  * // call service (action) to request data
  * myResourceService.get(id);
- * 
+ *
  * anux($scope) // wraps scope to remove listeners on $destroy
  *   .listenTo('MyResource', function (updatedResource) {
  *      vm.myResource = updatedResource;
@@ -24,14 +24,15 @@
  **/
 
 var MODULE_NAME = module.exports = 'anux',
-    SUCCESS = 'success',
-    ERROR = 'error';
+    _ = require('lodash');
+
+require('flux-angular');
 
 angular.module(MODULE_NAME, ['flux'])
     .factory('anux', Anux);
 
-Anux.$inject = ['$rootScope', 'lodash', 'flux'];
-function Anux ($rootScope, _, flux) {
+Anux.$inject = ['$log', '$rootScope', 'flux'];
+function Anux ($log, $rootScope, flux) {
     var _stores = [];
 
     function storesWrapper ($scope) {

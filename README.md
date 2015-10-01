@@ -1,10 +1,10 @@
 # anux
+Dynamic Flux store service.
+### Some things should only flow one direction...
 
-###Some things should only flow one direction...
+No need to write custom stores/actions/dispatchers/everything, data will flow through your app like an 80 year old duodenum.
 
-Dynamic Flux store service.  No need to write custom stores/actions/dispatchers/everything.  Data will flow through your app like an 80 year old duodenum.
-
-####Wire it up to a service
+#### Wire it up to a service
 
 ```js
 function APIService ($http, anux) {
@@ -13,7 +13,7 @@ function APIService ($http, anux) {
 		getNewsFeed: getNewsFeed
     };
 
-    function getUsers (userId) {
+    function getUsers () {
 		return $http.get('/api/users')
 			.then(anux.dispatch('user'))
 			.catch(anux.error('user'));
@@ -27,13 +27,14 @@ function APIService ($http, anux) {
 }
 ```
 
-####Listen to your stores
+#### Listen to your stores
 
 ```js
 function MainCtrl ($scope, apiService, anux) {
 	...
 
-	apiService.getUsers(userId);
+	apiService.getUsers();
+	apiService.getNewsFeed();
 
 	anux($scope)
 		.listenTo('user', function (users) {
