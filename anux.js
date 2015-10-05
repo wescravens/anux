@@ -33,7 +33,9 @@ angular.module(MODULE_NAME, ['flux'])
 
 Anux.$inject = ['$log', '$rootScope', 'flux'];
 function Anux ($log, $rootScope, flux) {
-    var _stores = [];
+    var _stores = [],
+        SUCCESS = 'success',
+        ERROR = 'error';
 
     function storesWrapper ($scope) {
         var listeners = [];
@@ -50,6 +52,7 @@ function Anux ($log, $rootScope, flux) {
             }
 
             listenTo($scope, storeName, notify);
+
             return this;
         }
 
@@ -79,39 +82,52 @@ function Anux ($log, $rootScope, flux) {
     storesWrapper.listenTo = listenTo;
     storesWrapper.onError = onError;
 
-    function dispatch (storeName) {
+    storesWrapper.stores = flux.stores;
+    storesWrapper.dispatcher = flux.dispatcher;
+    storesWrapper.reset = flux.reset;
+
+    function dispatch (storeName, immediateResponse) {
         if (!_storeExists(storeName)) {
             create(storeName);
         }
 
-        return function successHandler (response) {
-            if (response.$promise) {
-                response = response.toJSON();
-            }
+        if (immediateResponse) {
+            successHandler(immediateResponse);
+            return this;
+        }
 
+        return successHandler;
+
+        function successHandler (response) {
             flux.dispatch(_joinNamespace(storeName, SUCCESS), response);
-
             return response;
-        };
+        }
     }
 
-    function error (storeName) {
-        return function (err) {
+    function error (storeName, immediateError) {
+        if (immediateError) {
+            errorHandler(immediateError);
+            return this;
+        }
+
+        return errorHandler;
+
+        function errorHandler (err) {
             flux.dispatch(_joinNamespace(storeName, ERROR), err);
             return err;
-        };
+        }
     }
 
     function create (name) {
-        var storeOptions,
-            newStore;
+        var store = _getStore(name);
 
-        if (_storeExists(name)) {
-            throw new Error('Store ' + name + ' already exists');
+        if (store) {
+            return store;
         }
 
-        storeOptions = {
+        store = flux.createStore(name, {
             value: null,
+            name: name,
             handlers: _createHandlers(name),
             success: function (response) {
                 this.value = response;
@@ -123,66 +139,69 @@ function Anux ($log, $rootScope, flux) {
             exports: {
                 get value() {
                     return this.value;
+                },
+                get name() {
+                    return this.name;
                 }
             }
-        };
-
-        newStore = flux.createStore(name, storeOptions);
-
-        _stores.push({
-            name: name,
-            store: newStore
         });
 
-        return newStore;
+        _stores.push(store);
+
+        return store;
     }
 
     function listenTo ($scope, storeName, notify) {
-        var store;
-
-        if (!$scope) {
-            storeName = $scope;
-            notify = storeName;
-            $scope = $rootScope;
-        }
-
-        store = _getStore(storeName);
-
-        $scope.$listenTo(store, _joinNamespace(storeName, SUCCESS), function () {
-            return notify(store.value);
-        });
-
+        _bindListener($scope, storeName, SUCCESS, notify);
         return this;
     }
 
     function onError ($scope, storeName, errorHandler) {
+        _bindListener($scope, storeName, ERROR, errorHandler);
+        return this;
+    }
+
+    function _bindListener ($scope, storeName, event, handler) {
         var store;
 
         if (!$scope) {
             storeName = $scope;
-            errorHandler = storeName;
+            handler = storeName;
             $scope = $rootScope;
         }
 
         store = _getStore(storeName);
 
-        $scope.$listenTo(store, _joinNamespace(storeName, ERROR), errorHandler);
+        if (!store) {
+            store = create(storeName);
+        }
 
-        return this;
+        // call the handler if the store has a value
+        //if (store.value && event !== ERROR) {
+        //    handler(store.value);
+        //}
+
+        $scope.$listenTo(store, _joinNamespace(storeName, event), function (err) {
+            if (err && _.isError(err)) {
+                handler(err);
+                return err;
+            }
+
+            handler(store.value);
+            return store.value;
+        });
     }
 
     function _storeExists (storeName) {
-        return !!_getStore(storeName);
+        return !!_.findWhere(_stores, {name: storeName});
     }
 
     function _getStore (storeName) {
-        var storeInfo = _.findWhere(_stores, {name: storeName});
-
-        if (!storeInfo) {
+        if (!_storeExists(storeName)) {
             return;
         }
 
-        return storeInfo.store;
+        return _.findWhere(_stores, {name: storeName});
     }
 
     function _createHandlers (handler) {
